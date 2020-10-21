@@ -26,7 +26,6 @@
  */
 
 #import <UIKit/UIKit.h>
-#import <CoreLocation/CoreLocation.h>
 
 #import "OneSignalLocation.h"
 #import "OneSignalHelper.h"
@@ -154,14 +153,14 @@ static OneSignalLocation* singleInstance = nil;
         }
     } else {
         //Check if always granted
-        if ((int)[NSClassFromString(@"CLLocationManager") performSelector:@selector(authorizationStatus)] == kCLAuthorizationStatusAuthorizedAlways) {
-            [OneSignalLocation beginTask];
-            [sendLocationTimer invalidate];
-            sendLocationTimer = [NSTimer scheduledTimerWithTimeInterval:adjustedTime target:self selector:@selector(sendLocation) userInfo:nil repeats:NO];
-            [[NSRunLoop mainRunLoop] addTimer:sendLocationTimer forMode:NSRunLoopCommonModes];
-        } else {
+//        if ((int)[NSClassFromString(@"CLLocationManager") performSelector:@selector(authorizationStatus)] == kCLAuthorizationStatusAuthorizedAlways) {
+//            [OneSignalLocation beginTask];
+//            [sendLocationTimer invalidate];
+//            sendLocationTimer = [NSTimer scheduledTimerWithTimeInterval:adjustedTime target:self selector:@selector(sendLocation) userInfo:nil repeats:NO];
+//            [[NSRunLoop mainRunLoop] addTimer:sendLocationTimer forMode:NSRunLoopCommonModes];
+//        } else {
             sendLocationTimer = NULL;
-        }
+//        }
     }
 }
 
@@ -186,80 +185,80 @@ static OneSignalLocation* singleInstance = nil;
 }
 
 + (void)sendCurrentAuthStatusToListeners {
-    id clLocationManagerClass = NSClassFromString(@"CLLocationManager");
-    CLAuthorizationStatus permissionStatus = [clLocationManagerClass performSelector:@selector(authorizationStatus)];
-    if (permissionStatus == kCLAuthorizationStatusNotDetermined)
-        return;
-
-    // If already given or denied the permission, listeners should have the response
-    let denied = permissionStatus == kCLAuthorizationStatusRestricted || permissionStatus == kCLAuthorizationStatusDenied;
-    [self sendAndClearLocationListener:denied ? PERMISSION_DENIED : PERMISSION_GRANTED];
+//    id clLocationManagerClass = NSClassFromString(@"CLLocationManager");
+//    CLAuthorizationStatus permissionStatus = [clLocationManagerClass performSelector:@selector(authorizationStatus)];
+//    if (permissionStatus == kCLAuthorizationStatusNotDetermined)
+//        return;
+//
+//    // If already given or denied the permission, listeners should have the response
+//    let denied = permissionStatus == kCLAuthorizationStatusRestricted || permissionStatus == kCLAuthorizationStatusDenied;
+//    [self sendAndClearLocationListener:denied ? PERMISSION_DENIED : PERMISSION_GRANTED];
 }
 
 + (void)internalGetLocation:(bool)prompt fallbackToSettings:(BOOL)fallback {
-    fallbackToSettings = fallback;
-    id clLocationManagerClass = NSClassFromString(@"CLLocationManager");
-    
-    // On the application init we are always calling this method
-    // If location permissions was not asked "started" will never be true
-    if ([self started]) {
-        // We evaluate the following cases after permissions were asked (denied or given)
-        CLAuthorizationStatus permissionStatus = [clLocationManagerClass performSelector:@selector(authorizationStatus)];
-        // Fallback to settings alert view when the following condition are true:
-        //   - On a prompt flow
-        //   - Fallback to settings is enabled
-        //   - Permission were denied
-        if (prompt && fallback && permissionStatus == kCLAuthorizationStatusDenied)
-            [self showLocationSettingsAlertController];
-        else
-            [self sendCurrentAuthStatusToListeners];
-        return;
-    }
-    
-    // Check for location in plist
-    if (![clLocationManagerClass performSelector:@selector(locationServicesEnabled)]) {
-        onesignal_Log(ONE_S_LL_DEBUG, @"CLLocationManager locationServices Disabled.");
-        [self sendAndClearLocationListener:ERROR];
-        return;
-    }
-    
-    CLAuthorizationStatus permissionStatus = [clLocationManagerClass performSelector:@selector(authorizationStatus)];
-    // return if permission not determined and should not prompt
-    if (permissionStatus == kCLAuthorizationStatusNotDetermined && !prompt)
-        return;
-    
-    [self sendCurrentAuthStatusToListeners];
-    locationManager = [[clLocationManagerClass alloc] init];
-    [locationManager setValue:[self sharedInstance] forKey:@"delegate"];
-    
-        
-    //Check info plist for request descriptions
-    //LocationAlways > LocationWhenInUse > No entry (Log error)
-    //Location Always requires: Location Background Mode + NSLocationAlwaysUsageDescription
-    NSArray* backgroundModes = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"UIBackgroundModes"];
-    NSString* alwaysDescription = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationAlwaysUsageDescription"] ?: [[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationAlwaysAndWhenInUseUsageDescription"];
-    // use background location updates if always permission granted or prompt allowed
-    if (backgroundModes && [backgroundModes containsObject:@"location"] && alwaysDescription && (permissionStatus == kCLAuthorizationStatusAuthorizedAlways || prompt)) {
-        [locationManager performSelector:@selector(requestAlwaysAuthorization)];
-        if ([OneSignalHelper isIOSVersionGreaterThanOrEqual:@"9.0"])
-            [locationManager setValue:@YES forKey:@"allowsBackgroundLocationUpdates"];
-    }
-
-    else if ([[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationWhenInUseUsageDescription"]) {
-        if (permissionStatus == kCLAuthorizationStatusNotDetermined)
-            [locationManager performSelector:@selector(requestWhenInUseAuthorization)];
-    }
-
-    else {
-        onesignal_Log(ONE_S_LL_ERROR, @"Include a privacy NSLocationAlwaysUsageDescription or NSLocationWhenInUseUsageDescription in your info.plist to request location permissions.");
-        [self sendAndClearLocationListener:LOCATION_PERMISSIONS_MISSING_INFO_PLIST];
-    }
-        
-    // This method is used for getting the location manager to obtain an initial location fix
-    // and will notify your delegate by calling its locationManager:didUpdateLocations: method
-    [locationManager performSelector:@selector(startUpdatingLocation)];
-    
-    started = true;
+//    fallbackToSettings = fallback;
+//    id clLocationManagerClass = NSClassFromString(@"CLLocationManager");
+//    
+//    // On the application init we are always calling this method
+//    // If location permissions was not asked "started" will never be true
+//    if ([self started]) {
+//        // We evaluate the following cases after permissions were asked (denied or given)
+//        CLAuthorizationStatus permissionStatus = [clLocationManagerClass performSelector:@selector(authorizationStatus)];
+//        // Fallback to settings alert view when the following condition are true:
+//        //   - On a prompt flow
+//        //   - Fallback to settings is enabled
+//        //   - Permission were denied
+//        if (prompt && fallback && permissionStatus == kCLAuthorizationStatusDenied)
+//            [self showLocationSettingsAlertController];
+//        else
+//            [self sendCurrentAuthStatusToListeners];
+//        return;
+//    }
+//    
+//    // Check for location in plist
+//    if (![clLocationManagerClass performSelector:@selector(locationServicesEnabled)]) {
+//        onesignal_Log(ONE_S_LL_DEBUG, @"CLLocationManager locationServices Disabled.");
+//        [self sendAndClearLocationListener:ERROR];
+//        return;
+//    }
+//    
+//    CLAuthorizationStatus permissionStatus = [clLocationManagerClass performSelector:@selector(authorizationStatus)];
+//    // return if permission not determined and should not prompt
+//    if (permissionStatus == kCLAuthorizationStatusNotDetermined && !prompt)
+//        return;
+//    
+//    [self sendCurrentAuthStatusToListeners];
+//    locationManager = [[clLocationManagerClass alloc] init];
+//    [locationManager setValue:[self sharedInstance] forKey:@"delegate"];
+//    
+//        
+//    //Check info plist for request descriptions
+//    //LocationAlways > LocationWhenInUse > No entry (Log error)
+//    //Location Always requires: Location Background Mode + NSLocationAlwaysUsageDescription
+//    NSArray* backgroundModes = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"UIBackgroundModes"];
+//    NSString* alwaysDescription = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationAlwaysUsageDescription"] ?: [[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationAlwaysAndWhenInUseUsageDescription"];
+//    // use background location updates if always permission granted or prompt allowed
+//    if (backgroundModes && [backgroundModes containsObject:@"location"] && alwaysDescription && (permissionStatus == kCLAuthorizationStatusAuthorizedAlways || prompt)) {
+//        [locationManager performSelector:@selector(requestAlwaysAuthorization)];
+//        if ([OneSignalHelper isIOSVersionGreaterThanOrEqual:@"9.0"])
+//            [locationManager setValue:@YES forKey:@"allowsBackgroundLocationUpdates"];
+//    }
+//
+//    else if ([[NSBundle mainBundle] objectForInfoDictionaryKey:@"NSLocationWhenInUseUsageDescription"]) {
+//        if (permissionStatus == kCLAuthorizationStatusNotDetermined)
+//            [locationManager performSelector:@selector(requestWhenInUseAuthorization)];
+//    }
+//
+//    else {
+//        onesignal_Log(ONE_S_LL_ERROR, @"Include a privacy NSLocationAlwaysUsageDescription or NSLocationWhenInUseUsageDescription in your info.plist to request location permissions.");
+//        [self sendAndClearLocationListener:LOCATION_PERMISSIONS_MISSING_INFO_PLIST];
+//    }
+//        
+//    // This method is used for getting the location manager to obtain an initial location fix
+//    // and will notify your delegate by calling its locationManager:didUpdateLocations: method
+//    [locationManager performSelector:@selector(startUpdatingLocation)];
+//    
+//    started = true;
 }
 
 + (void)showLocationSettingsAlertController {
